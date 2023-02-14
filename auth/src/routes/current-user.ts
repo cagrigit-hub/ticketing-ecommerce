@@ -1,6 +1,5 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import { currentUser } from "../middlewares/current-user";
+import { currentUser } from "@sgtickets-cakitomakito/common";
 const router = express.Router();
 
 router.get("/api/users/currentuser", currentUser, (req, res) => {
