@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import { body } from "express-validator";
 import { requireAuth, validateRequest } from "@sgtickets-cakitomakito/common";
 import { Ticket } from "../models/ticket";
+import { TicketCreatedPublisher } from "../events/publishers/ticket-created-publisher";
+import { natsWrapper } from "../nats-wrapper";
 const router = express.Router();
 
 router.post(
@@ -14,7 +16,7 @@ router.post(
       .withMessage("Price must be greater than 0"),
   ],
   validateRequest,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const { title, price } = req.body;
     const ticket = Ticket.build({
       title,
@@ -22,6 +24,14 @@ router.post(
       userId: req.currentUser!.id,
     });
     ticket.save();
+
+    await new TicketCreatedPublisher(natsWrapper.client).publish({
+      id: ticket.id,
+      title: ticket.title,
+      price: ticket.price,
+      userId: ticket.userId,
+    });
+
     res.status(201).send(ticket);
   }
 );
